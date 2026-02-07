@@ -1,0 +1,371 @@
+{% extends "base.html" %}
+
+{% block title %}Настройки - Система управления поливом{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="page-header">
+        <h1><i class="fas fa-cog"></i> Настройки системы</h1>
+        <p>Управление параметрами уведомлений и интеграций</p>
+    </div>
+
+    <div class="settings-container">
+        <form method="POST" class="settings-form">
+            <div class="settings-section">
+                <div class="section-icon">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div class="section-content">
+                    <h3>Время отправки уведомлений</h3>
+                    <p class="section-description">
+                        Установите временной диапазон, в течение которого система будет отправлять уведомления
+                        о необходимости полива растений
+                    </p>
+                    
+                    <div class="time-range">
+                        <div class="form-group">
+                            <label for="start_hour">
+                                <i class="fas fa-sunrise"></i> Начало (час)
+                            </label>
+                            <select id="start_hour" name="start_hour">
+                                {% for hour in range(0, 24) %}
+                                <option value="{{ hour }}" {% if settings.notification_start_hour|int == hour %}selected{% endif %}>
+                                    {{ '%02d'|format(hour) }}:00
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="end_hour">
+                                <i class="fas fa-sunset"></i> Конец (час)
+                            </label>
+                            <select id="end_hour" name="end_hour">
+                                {% for hour in range(0, 24) %}
+                                <option value="{{ hour }}" {% if settings.notification_end_hour|int == hour %}selected{% endif %}>
+                                    {{ '%02d'|format(hour) }}:00
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="info-note">
+                        <i class="fas fa-info-circle"></i>
+                        Все уведомления отправляются по московскому времени (UTC+3)
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-section">
+                <div class="section-icon">
+                    <i class="fas fa-redo"></i>
+                </div>
+                <div class="section-content">
+                    <h3>Параметры повтора уведомлений</h3>
+                    <p class="section-description">
+                        Если пользователь не отреагировал на уведомление о поливе, система будет повторять
+                        его через указанный интервал
+                    </p>
+                    
+                    <div class="form-group">
+                        <label for="retry_interval">
+                            <i class="fas fa-hourglass-half"></i> Интервал повтора (минуты)
+                        </label>
+                        <input type="number" id="retry_interval" name="retry_interval" 
+                               value="{{ settings.notification_retry_interval_minutes }}" 
+                               min="30" max="720" step="30" required>
+                        <small>Минимум 30 минут, максимум 12 часов</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="max_retries">
+                            <i class="fas fa-sync-alt"></i> Максимальное количество повторов
+                        </label>
+                        <input type="number" id="max_retries" name="max_retries" 
+                               value="{{ settings.notification_max_retries }}" 
+                               min="1" max="10" required>
+                        <small>Сколько раз повторять уведомление, если на него не отреагировали</small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-section">
+                <div class="section-icon">
+                    <i class="fab fa-telegram"></i>
+                </div>
+                <div class="section-content">
+                    <h3>Интеграция с Telegram</h3>
+                    <p class="section-description">
+                        Настройте подключение к Telegram боту для отправки уведомлений
+                    </p>
+                    
+                    <div class="form-group">
+                        <label for="bot_token">
+                            <i class="fas fa-key"></i> Токен Telegram бота
+                        </label>
+                        <input type="text" id="bot_token" name="bot_token" 
+                               value="{{ settings.telegram_bot_token }}"
+                               placeholder="1234567890:ABCdefGHIjklMNOpqrsTUVwxyz">
+                        <small>Получите токен у <a href="https://t.me/BotFather" target="_blank">@BotFather</a> в Telegram</small>
+                    </div>
+                    
+                    <div class="telegram-instructions">
+                        <strong>Как создать Telegram бота:</strong>
+                        <ol>
+                            <li>Откройте Telegram и найдите <a href="https://t.me/BotFather" target="_blank">@BotFather</a></li>
+                            <li>Отправьте команду <code>/newbot</code></li>
+                            <li>Следуйте инструкциям и укажите имя бота</li>
+                            <li>Скопируйте полученный токен и вставьте его в поле выше</li>
+                            <li>Перезапустите приложение для применения настроек</li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-section">
+                <div class="section-icon">
+                    <i class="fas fa-info-circle"></i>
+                </div>
+                <div class="section-content">
+                    <h3>Дополнительная информация</h3>
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <i class="fas fa-globe"></i>
+                            <div>
+                                <strong>Часовой пояс</strong>
+                                <p>Москва (UTC+3)</p>
+                            </div>
+                        </div>
+                        <div class="info-item">
+                            <i class="fas fa-database"></i>
+                            <div>
+                                <strong>База данных</strong>
+                                <p>MySQL</p>
+                            </div>
+                        </div>
+                        <div class="info-item">
+                            <i class="fas fa-code"></i>
+                            <div>
+                                <strong>Версия</strong>
+                                <p>1.0.0</p>
+                            </div>
+                        </div>
+                        <div class="info-item">
+                            <i class="fas fa-server"></i>
+                            <div>
+                                <strong>Статус</strong>
+                                <p class="status-online">
+                                    <span class="status-dot"></span> Работает
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-success">
+                    <i class="fas fa-save"></i> Сохранить настройки
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+.settings-container {
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.settings-form {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+.settings-section {
+    background: var(--card-bg);
+    border-radius: 16px;
+    padding: 2rem;
+    box-shadow: var(--shadow);
+    display: flex;
+    gap: 2rem;
+}
+
+.section-icon {
+    width: 70px;
+    height: 70px;
+    flex-shrink: 0;
+    background: linear-gradient(135deg, var(--primary-color), var(--primary-light));
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 2rem;
+}
+
+.section-content {
+    flex: 1;
+}
+
+.section-content h3 {
+    color: var(--primary-dark);
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.section-description {
+    color: var(--text-secondary);
+    margin-bottom: 1.5rem;
+    line-height: 1.6;
+}
+
+.time-range {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.info-note {
+    padding: 0.875rem;
+    background: rgba(45, 106, 79, 0.05);
+    border-radius: 8px;
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.info-note i {
+    color: var(--primary-color);
+}
+
+.telegram-instructions {
+    padding: 1.25rem;
+    background: var(--bg-color);
+    border-radius: 8px;
+    margin-top: 1rem;
+}
+
+.telegram-instructions strong {
+    color: var(--primary-dark);
+    display: block;
+    margin-bottom: 0.75rem;
+}
+
+.telegram-instructions ol {
+    margin-left: 1.5rem;
+    color: var(--text-secondary);
+}
+
+.telegram-instructions li {
+    margin-bottom: 0.5rem;
+    line-height: 1.6;
+}
+
+.telegram-instructions code {
+    background: white;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    color: var(--primary-dark);
+    font-weight: 600;
+}
+
+.telegram-instructions a {
+    color: var(--primary-color);
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.telegram-instructions a:hover {
+    text-decoration: underline;
+}
+
+.info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+}
+
+.info-item {
+    padding: 1rem;
+    background: var(--bg-color);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.info-item i {
+    font-size: 1.75rem;
+    color: var(--primary-color);
+}
+
+.info-item strong {
+    display: block;
+    color: var(--text-primary);
+    margin-bottom: 0.25rem;
+    font-size: 0.875rem;
+}
+
+.info-item p {
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+    margin: 0;
+}
+
+.status-online {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--success-color) !important;
+    font-weight: 600;
+}
+
+.status-dot {
+    width: 8px;
+    height: 8px;
+    background: var(--success-color);
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+}
+
+.form-actions {
+    text-align: center;
+}
+
+.form-actions .btn {
+    min-width: 250px;
+}
+
+@media (max-width: 768px) {
+    .settings-section {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+
+    .time-range {
+        grid-template-columns: 1fr;
+    }
+
+    .info-grid {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+{% endblock %}

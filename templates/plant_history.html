@@ -1,0 +1,326 @@
+{% extends "base.html" %}
+
+{% block title %}История {{ plant.name }} - Система управления поливом{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="page-header">
+        <h1>
+            <i class="fas fa-history"></i> История ухода за растением
+        </h1>
+        <p>{{ plant.name }}</p>
+    </div>
+
+    <div class="history-container">
+        <div class="plant-summary">
+            <div class="summary-image">
+                {% if plant.image_url %}
+                <img src="{{ plant.image_url }}" alt="{{ plant.name }}">
+                {% else %}
+                <div class="summary-placeholder">
+                    <i class="fas fa-seedling"></i>
+                </div>
+                {% endif %}
+            </div>
+            <div class="summary-info">
+                <h2>{{ plant.name }}</h2>
+                {% if plant.location %}
+                <p><i class="fas fa-map-marker-alt"></i> {{ plant.location }}</p>
+                {% endif %}
+                <div class="summary-schedule">
+                    <div class="schedule-item">
+                        <i class="fas fa-droplet"></i>
+                        <span>Полив каждые <strong>{{ plant.watering_interval_days }}</strong> дней</span>
+                    </div>
+                    {% if plant.fertilizer_interval_days %}
+                    <div class="schedule-item">
+                        <i class="fas fa-flask"></i>
+                        <span>Прикормка каждые <strong>{{ plant.fertilizer_interval_days }}</strong> дней</span>
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="summary-actions">
+                    <form method="POST" action="{{ url_for('water_plant', plant_id=plant.id) }}" style="display: inline;">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-droplet"></i> Полить сейчас
+                        </button>
+                    </form>
+                    {% if plant.fertilizer_interval_days %}
+                    <form method="POST" action="{{ url_for('fertilize_plant', plant_id=plant.id) }}" style="display: inline;">
+                        <button type="submit" class="btn btn-info">
+                            <i class="fas fa-flask"></i> Прикормить
+                        </button>
+                    </form>
+                    {% endif %}
+                    <a href="{{ url_for('edit_plant', plant_id=plant.id) }}" class="btn btn-secondary">
+                        <i class="fas fa-edit"></i> Редактировать
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="history-timeline">
+            <h3><i class="fas fa-clock"></i> Журнал действий</h3>
+            
+            {% if history %}
+            <div class="timeline">
+                {% for entry in history %}
+                <div class="timeline-item">
+                    <div class="timeline-marker {% if entry.action_type == 'watering' %}marker-watering{% else %}marker-fertilizer{% endif %}">
+                        <i class="fas fa-{% if entry.action_type == 'watering' %}droplet{% else %}flask{% endif %}"></i>
+                    </div>
+                    <div class="timeline-content">
+                        <div class="timeline-header">
+                            <strong>{{ entry.user_name }}</strong>
+                            {% if entry.action_type == 'watering' %}
+                            полил(а) растение
+                            {% else %}
+                            прикормил(а) растение
+                            {% endif %}
+                        </div>
+                        <div class="timeline-date">
+                            <i class="fas fa-calendar"></i>
+                            {{ entry.watered_at.strftime('%d.%m.%Y %H:%M') }}
+                        </div>
+                        {% if entry.notes %}
+                        <div class="timeline-notes">
+                            <i class="fas fa-sticky-note"></i> {{ entry.notes }}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-state-small">
+                <i class="fas fa-history"></i>
+                <p>История ухода пока пуста</p>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="back-link">
+            <a href="{{ url_for('plants_list') }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Назад к списку растений
+            </a>
+        </div>
+    </div>
+</div>
+
+<style>
+.history-container {
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+.plant-summary {
+    background: var(--card-bg);
+    border-radius: 16px;
+    padding: 2rem;
+    box-shadow: var(--shadow);
+    display: flex;
+    gap: 2rem;
+    margin-bottom: 2rem;
+}
+
+.summary-image {
+    width: 200px;
+    height: 200px;
+    flex-shrink: 0;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: var(--shadow);
+}
+
+.summary-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.summary-placeholder {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, var(--primary-light), var(--secondary-color));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 5rem;
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.summary-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.summary-info h2 {
+    color: var(--primary-dark);
+    font-size: 2rem;
+}
+
+.summary-info > p {
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.summary-schedule {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.schedule-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    background: var(--bg-color);
+    border-radius: 8px;
+    font-size: 0.95rem;
+}
+
+.schedule-item i {
+    color: var(--primary-color);
+    font-size: 1.25rem;
+}
+
+.summary-actions {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    margin-top: auto;
+}
+
+.history-timeline {
+    background: var(--card-bg);
+    border-radius: 16px;
+    padding: 2rem;
+    box-shadow: var(--shadow);
+    margin-bottom: 2rem;
+}
+
+.history-timeline h3 {
+    color: var(--primary-dark);
+    font-size: 1.5rem;
+    margin-bottom: 2rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.timeline {
+    position: relative;
+    padding-left: 2rem;
+}
+
+.timeline::before {
+    content: '';
+    position: absolute;
+    left: 15px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: var(--border-color);
+}
+
+.timeline-item {
+    position: relative;
+    margin-bottom: 2rem;
+    display: flex;
+    gap: 1.5rem;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: -2rem;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 0.875rem;
+    z-index: 1;
+    box-shadow: 0 0 0 4px var(--card-bg);
+}
+
+.marker-watering {
+    background: linear-gradient(135deg, var(--primary-color), var(--primary-light));
+}
+
+.marker-fertilizer {
+    background: linear-gradient(135deg, var(--info-color), #8ecae6);
+}
+
+.timeline-content {
+    flex: 1;
+    background: var(--bg-color);
+    padding: 1.25rem;
+    border-radius: 12px;
+    border-left: 3px solid var(--primary-light);
+}
+
+.timeline-header {
+    font-size: 1.05rem;
+    margin-bottom: 0.5rem;
+    color: var(--text-primary);
+}
+
+.timeline-date {
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.timeline-notes {
+    margin-top: 0.75rem;
+    padding: 0.75rem;
+    background: white;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: start;
+    gap: 0.5rem;
+}
+
+.back-link {
+    text-align: center;
+}
+
+@media (max-width: 768px) {
+    .plant-summary {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+
+    .summary-info {
+        align-items: center;
+    }
+
+    .summary-actions {
+        justify-content: center;
+    }
+
+    .timeline {
+        padding-left: 1.5rem;
+    }
+
+    .timeline-marker {
+        left: -1.5rem;
+        width: 28px;
+        height: 28px;
+        font-size: 0.75rem;
+    }
+}
+</style>
+{% endblock %}

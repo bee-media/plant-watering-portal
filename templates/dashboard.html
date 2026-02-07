@@ -1,0 +1,207 @@
+{% extends "base.html" %}
+
+{% block title %}Дашборд - Система управления поливом{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="page-header">
+        <h1><i class="fas fa-home"></i> Дашборд</h1>
+        <p>Обзор всех ваших растений и актуальные задачи</p>
+    </div>
+
+    <div class="stats-grid">
+        <div class="stat-card stat-primary">
+            <div class="stat-icon">
+                <i class="fas fa-seedling"></i>
+            </div>
+            <div class="stat-content">
+                <h3>{{ plants|length }}</h3>
+                <p>Всего растений</p>
+            </div>
+        </div>
+
+        <div class="stat-card stat-warning">
+            <div class="stat-icon">
+                <i class="fas fa-droplet"></i>
+            </div>
+            <div class="stat-content">
+                <h3>{{ plants_needing_water }}</h3>
+                <p>Требуют полива</p>
+            </div>
+        </div>
+
+        <div class="stat-card stat-info">
+            <div class="stat-icon">
+                <i class="fas fa-flask"></i>
+            </div>
+            <div class="stat-content">
+                <h3>{{ plants_needing_fertilizer }}</h3>
+                <p>Требуют прикормки</p>
+            </div>
+        </div>
+
+        <div class="stat-card stat-success">
+            <div class="stat-icon">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <div class="stat-content">
+                <h3>{{ recent_history|length }}</h3>
+                <p>Недавних действий</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="dashboard-grid">
+        <div class="dashboard-section plants-section">
+            <div class="section-header">
+                <h2><i class="fas fa-leaf"></i> Мои растения</h2>
+                <a href="{{ url_for('add_plant') }}" class="btn btn-sm btn-success">
+                    <i class="fas fa-plus"></i> Добавить
+                </a>
+            </div>
+
+            {% if plants %}
+            <div class="plants-grid">
+                {% for plant in plants %}
+                <div class="plant-card {% if plant.next_watering_date and plant.next_watering_date <= today %}needs-attention{% endif %}">
+                    <div class="plant-image">
+                        {% if plant.image_url %}
+                        <img src="{{ plant.image_url }}" alt="{{ plant.name }}">
+                        {% else %}
+                        <div class="plant-placeholder">
+                            <i class="fas fa-seedling"></i>
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="plant-info">
+                        <h3>{{ plant.name }}</h3>
+                        {% if plant.location %}
+                        <p class="plant-location">
+                            <i class="fas fa-map-marker-alt"></i> {{ plant.location }}
+                        </p>
+                        {% endif %}
+                        <div class="plant-status">
+                            <div class="status-item">
+                                <i class="fas fa-droplet"></i>
+                                <span>
+                                    {% if plant.next_watering_date %}
+                                        {% if plant.next_watering_date <= today %}
+                                        <strong class="text-warning">Полить сегодня</strong>
+                                        {% else %}
+                                        Полить через {{ (plant.next_watering_date - today).days }} дн.
+                                        {% endif %}
+                                    {% else %}
+                                    Не назначено
+                                    {% endif %}
+                                </span>
+                            </div>
+                            {% if plant.fertilizer_interval_days %}
+                            <div class="status-item">
+                                <i class="fas fa-flask"></i>
+                                <span>
+                                    {% if plant.next_fertilizer_date %}
+                                        {% if plant.next_fertilizer_date <= today %}
+                                        <strong class="text-info">Прикормить сегодня</strong>
+                                        {% else %}
+                                        Прикормить через {{ (plant.next_fertilizer_date - today).days }} дн.
+                                        {% endif %}
+                                    {% else %}
+                                    Не назначено
+                                    {% endif %}
+                                </span>
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="plant-actions">
+                            <form method="POST" action="{{ url_for('water_plant', plant_id=plant.id) }}" style="display: inline;">
+                                <button type="submit" class="btn btn-sm btn-primary">
+                                    <i class="fas fa-droplet"></i> Полить
+                                </button>
+                            </form>
+                            {% if plant.fertilizer_interval_days %}
+                            <form method="POST" action="{{ url_for('fertilize_plant', plant_id=plant.id) }}" style="display: inline;">
+                                <button type="submit" class="btn btn-sm btn-info">
+                                    <i class="fas fa-flask"></i> Прикормить
+                                </button>
+                            </form>
+                            {% endif %}
+                            <a href="{{ url_for('plant_history', plant_id=plant.id) }}" class="btn btn-sm btn-secondary">
+                                <i class="fas fa-history"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <i class="fas fa-seedling"></i>
+                <h3>Нет растений</h3>
+                <p>Добавьте первое растение, чтобы начать</p>
+                <a href="{{ url_for('add_plant') }}" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Добавить растение
+                </a>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="dashboard-section history-section">
+            <div class="section-header">
+                <h2><i class="fas fa-history"></i> Последние действия</h2>
+            </div>
+
+            {% if recent_history %}
+            <div class="history-list">
+                {% for entry in recent_history %}
+                <div class="history-item">
+                    <div class="history-icon">
+                        <i class="fas fa-{% if entry.action_type == 'watering' %}droplet{% else %}flask{% endif %}"></i>
+                    </div>
+                    <div class="history-content">
+                        <p>
+                            <strong>{{ entry.user_name }}</strong> 
+                            {% if entry.action_type == 'watering' %}полил(а){% else %}прикормил(а){% endif %} 
+                            <strong>{{ entry.plant_name }}</strong>
+                        </p>
+                        <span class="history-time">{{ entry.watered_at.strftime('%d.%m.%Y %H:%M') }}</span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-state-small">
+                <i class="fas fa-history"></i>
+                <p>Пока нет действий</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+.today {
+    display: none;
+}
+</style>
+
+<script>
+// Передаем сегодняшнюю дату в JavaScript
+const today = new Date();
+today.setHours(0, 0, 0, 0);
+</script>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Автообновление статистики каждые 60 секунд
+setInterval(() => {
+    fetch('/api/dashboard/stats')
+        .then(response => response.json())
+        .then(data => {
+            // Обновление статистики при необходимости
+            console.log('Stats updated:', data);
+        })
+        .catch(error => console.error('Error fetching stats:', error));
+}, 60000);
+</script>
+{% endblock %}

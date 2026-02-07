@@ -1,0 +1,213 @@
+{% extends "base.html" %}
+
+{% block title %}{% if action == 'add' %}Добавить пользователя{% else %}Редактировать пользователя{% endif %}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="page-header">
+        <h1>
+            <i class="fas fa-{% if action == 'add' %}user-plus{% else %}user-edit{% endif %}"></i>
+            {% if action == 'add' %}Добавить нового пользователя{% else %}Редактировать пользователя{% endif %}
+        </h1>
+    </div>
+
+    <div class="form-container">
+        <form method="POST" class="user-form">
+            <div class="form-section">
+                <h3><i class="fas fa-user"></i> Личная информация</h3>
+                
+                <div class="form-group">
+                    <label for="name">
+                        <i class="fas fa-signature"></i> Имя и фамилия *
+                    </label>
+                    <input type="text" id="name" name="name" 
+                           value="{% if action == 'edit' %}{{ user.name }}{% endif %}" 
+                           required autofocus
+                           placeholder="Например: Иван Иванов">
+                </div>
+
+                <div class="form-group">
+                    <label for="username">
+                        <i class="fas fa-at"></i> Имя пользователя (логин) *
+                    </label>
+                    <input type="text" id="username" name="username" 
+                           value="{% if action == 'edit' %}{{ user.username }}{% endif %}" 
+                           required
+                           placeholder="Например: ivan">
+                    <small>Используется для входа в систему</small>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h3><i class="fas fa-lock"></i> Безопасность</h3>
+                
+                {% if action == 'add' %}
+                <div class="form-group">
+                    <label for="password">
+                        <i class="fas fa-key"></i> Пароль *
+                    </label>
+                    <input type="password" id="password" name="password" required
+                           placeholder="Минимум 6 символов">
+                </div>
+                {% else %}
+                <div class="form-group">
+                    <label for="new_password">
+                        <i class="fas fa-key"></i> Новый пароль
+                    </label>
+                    <input type="password" id="new_password" name="new_password"
+                           placeholder="Оставьте пустым, чтобы не изменять">
+                    <small>Введите новый пароль только если хотите его изменить</small>
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="form-section">
+                <h3><i class="fab fa-telegram"></i> Telegram уведомления</h3>
+                
+                <div class="form-group">
+                    <label for="telegram_id">
+                        <i class="fas fa-hashtag"></i> Telegram ID
+                    </label>
+                    <input type="text" id="telegram_id" name="telegram_id" 
+                           value="{% if action == 'edit' %}{{ user.telegram_id }}{% endif %}"
+                           placeholder="Например: 123456789">
+                    <small>
+                        Чтобы получить свой Telegram ID, напишите боту <strong>/start</strong>
+                        и скопируйте ID из ответа
+                    </small>
+                </div>
+
+                <div class="form-group">
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="receive_notifications" name="receive_notifications"
+                               {% if action == 'edit' and user.receive_notifications %}checked{% endif %}
+                               {% if action == 'add' %}checked{% endif %}>
+                        <label for="receive_notifications">
+                            <i class="fas fa-bell"></i> Получать уведомления о поливе
+                        </label>
+                    </div>
+                </div>
+
+                <div class="info-box">
+                    <i class="fas fa-info-circle"></i>
+                    <div>
+                        <strong>Как настроить уведомления:</strong>
+                        <ol>
+                            <li>Найдите вашего Telegram бота</li>
+                            <li>Напишите боту команду <code>/start</code></li>
+                            <li>Скопируйте полученный ID и вставьте в поле выше</li>
+                            <li>Убедитесь, что галочка "Получать уведомления" установлена</li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <a href="{{ url_for('users_list') }}" class="btn btn-secondary">
+                    <i class="fas fa-times"></i> Отмена
+                </a>
+                <button type="submit" class="btn btn-success">
+                    <i class="fas fa-{% if action == 'add' %}user-plus{% else %}save{% endif %}"></i> 
+                    {% if action == 'add' %}Создать пользователя{% else %}Сохранить изменения{% endif %}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+.form-container {
+    max-width: 800px;
+    margin: 0 auto;
+    background: var(--card-bg);
+    border-radius: 16px;
+    padding: 2.5rem;
+    box-shadow: var(--shadow);
+}
+
+.user-form {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+.form-section {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.form-section h3 {
+    color: var(--primary-dark);
+    font-size: 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid var(--border-color);
+}
+
+.info-box {
+    padding: 1.25rem;
+    background: linear-gradient(135deg, rgba(45, 106, 79, 0.05), rgba(116, 198, 157, 0.05));
+    border-left: 4px solid var(--primary-color);
+    border-radius: 8px;
+    display: flex;
+    gap: 1rem;
+}
+
+.info-box i {
+    font-size: 1.5rem;
+    color: var(--primary-color);
+    flex-shrink: 0;
+}
+
+.info-box strong {
+    color: var(--primary-dark);
+    display: block;
+    margin-bottom: 0.5rem;
+}
+
+.info-box ol {
+    margin-left: 1.25rem;
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+}
+
+.info-box ol li {
+    margin-bottom: 0.25rem;
+}
+
+.info-box code {
+    background: rgba(45, 106, 79, 0.1);
+    padding: 0.125rem 0.375rem;
+    border-radius: 4px;
+    color: var(--primary-dark);
+    font-weight: 600;
+    font-size: 0.9em;
+}
+
+.form-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+    padding-top: 1.5rem;
+    border-top: 2px solid var(--border-color);
+}
+
+@media (max-width: 768px) {
+    .form-container {
+        padding: 1.5rem;
+    }
+
+    .form-actions {
+        flex-direction: column-reverse;
+    }
+
+    .form-actions .btn {
+        width: 100%;
+    }
+}
+</style>
+{% endblock %}

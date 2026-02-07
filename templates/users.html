@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+
+{% block title %}Пользователи - Система управления поливом{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="page-header">
+        <h1><i class="fas fa-users"></i> Управление пользователями</h1>
+        <p>Все администраторы системы</p>
+    </div>
+
+    <div class="action-bar">
+        <a href="{{ url_for('add_user') }}" class="btn btn-success">
+            <i class="fas fa-user-plus"></i> Добавить пользователя
+        </a>
+    </div>
+
+    {% if users %}
+    <div class="users-grid">
+        {% for user in users %}
+        <div class="user-card">
+            <div class="user-avatar">
+                <i class="fas fa-user-circle"></i>
+            </div>
+            <div class="user-info">
+                <h3>{{ user.name }}</h3>
+                <p class="user-username">
+                    <i class="fas fa-at"></i> {{ user.username }}
+                </p>
+                {% if user.telegram_id %}
+                <p class="user-telegram">
+                    <i class="fab fa-telegram"></i> {{ user.telegram_id }}
+                </p>
+                {% endif %}
+                <div class="user-status">
+                    {% if user.receive_notifications %}
+                    <span class="status-badge status-active">
+                        <i class="fas fa-bell"></i> Уведомления включены
+                    </span>
+                    {% else %}
+                    <span class="status-badge status-inactive">
+                        <i class="fas fa-bell-slash"></i> Уведомления выключены
+                    </span>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="user-actions">
+                <a href="{{ url_for('edit_user', user_id=user.id) }}" class="btn btn-sm btn-primary">
+                    <i class="fas fa-edit"></i> Редактировать
+                </a>
+                {% if user.id != current_user.id %}
+                <form method="POST" action="{{ url_for('delete_user', user_id=user.id) }}" 
+                      onsubmit="return confirm('Вы уверены, что хотите удалить пользователя {{ user.name }}?');">
+                    <button type="submit" class="btn btn-sm btn-danger">
+                        <i class="fas fa-trash"></i> Удалить
+                    </button>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <i class="fas fa-users"></i>
+        <h3>Нет пользователей</h3>
+        <p>Добавьте пользователей для управления системой</p>
+        <a href="{{ url_for('add_user') }}" class="btn btn-primary">
+            <i class="fas fa-user-plus"></i> Добавить пользователя
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+.users-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 1.5rem;
+}
+
+.user-card {
+    background: var(--card-bg);
+    border-radius: 16px;
+    padding: 2rem;
+    box-shadow: var(--shadow);
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    transition: all 0.3s;
+}
+
+.user-card:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-lg);
+}
+
+.user-avatar {
+    text-align: center;
+    font-size: 5rem;
+    color: var(--primary-color);
+    margin-bottom: 0.5rem;
+}
+
+.user-info {
+    text-align: center;
+}
+
+.user-info h3 {
+    color: var(--primary-dark);
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.user-username,
+.user-telegram {
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.user-status {
+    margin-top: 1rem;
+}
+
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.status-active {
+    background: rgba(64, 145, 108, 0.1);
+    color: var(--success-color);
+}
+
+.status-inactive {
+    background: rgba(113, 128, 150, 0.1);
+    color: var(--text-secondary);
+}
+
+.user-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: auto;
+}
+
+.user-actions form {
+    flex: 1;
+}
+
+.user-actions .btn {
+    width: 100%;
+}
+
+@media (max-width: 768px) {
+    .users-grid {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+{% endblock %}

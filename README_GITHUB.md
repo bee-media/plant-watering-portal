@@ -87,7 +87,7 @@ Plant Watering Portal — это веб-приложение для управл
 
 1. **Клонируйте репозиторий**
 ```bash
-git clone https://github.com/yourusername/plant-watering-portal.git
+git clone https://github.com/bee-media/plant-watering-portal.git
 cd plant-watering-portal
 ```
 
@@ -392,10 +392,10 @@ sudo systemctl start plant-watering
 
 ## 📊 Статистика
 
-![GitHub stars](https://img.shields.io/github/stars/yourusername/plant-watering-portal?style=social)
-![GitHub forks](https://img.shields.io/github/forks/yourusername/plant-watering-portal?style=social)
-![GitHub issues](https://img.shields.io/github/issues/yourusername/plant-watering-portal)
-![GitHub pull requests](https://img.shields.io/github/issues-pr/yourusername/plant-watering-portal)
+![GitHub stars](https://img.shields.io/github/stars/bee-media/plant-watering-portal?style=social)
+![GitHub forks](https://img.shields.io/github/forks/bee-media/plant-watering-portal?style=social)
+![GitHub issues](https://img.shields.io/github/issues/bee-media/plant-watering-portal)
+![GitHub pull requests](https://img.shields.io/github/issues-pr/bee-media/plant-watering-portal)
 
 ---
 

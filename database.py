@@ -259,6 +259,14 @@ class Plant:
         """
         Database.execute_query(query, (now, next_watering.date(), plant_id), commit=True)
         
+        # Закрываем все активные уведомления о поливе для этого растения
+        close_query = """
+            UPDATE notification_log 
+            SET is_completed = TRUE, completed_by_user_id = %s, completed_at = %s
+            WHERE plant_id = %s AND notification_type = 'watering' AND is_completed = FALSE
+        """
+        Database.execute_query(close_query, (user_id, now, plant_id), commit=True)
+        
         # Добавляем в историю
         WateringHistory.add(plant_id, user_id, 'watering')
         
@@ -284,6 +292,14 @@ class Plant:
             WHERE id = %s
         """
         Database.execute_query(query, (now, next_fertilizer.date(), plant_id), commit=True)
+        
+        # Закрываем все активные уведомления о прикормке для этого растения
+        close_query = """
+            UPDATE notification_log 
+            SET is_completed = TRUE, completed_by_user_id = %s, completed_at = %s
+            WHERE plant_id = %s AND notification_type = 'fertilizer' AND is_completed = FALSE
+        """
+        Database.execute_query(close_query, (user_id, now, plant_id), commit=True)
         
         # Добавляем в историю
         WateringHistory.add(plant_id, user_id, 'fertilizer')

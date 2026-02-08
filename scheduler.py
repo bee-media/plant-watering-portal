@@ -77,26 +77,58 @@ class NotificationScheduler:
             # Проверяем растения, требующие полива
             plants_to_water = Plant.get_plants_needing_water()
             for plant in plants_to_water:
-                # Проверяем, есть ли уже активные уведомления
+                # Проверяем, есть ли уже активные уведомления ЗА СЕГОДНЯ
                 pending = NotificationLog.get_pending_for_plant(plant['id'], 'watering')
-                if not pending:
+                
+                # Фильтруем уведомления - только сегодняшние
+                today_pending = []
+                if pending:
+                    for notif in pending:
+                        sent_at = notif['sent_at']
+                        if isinstance(sent_at, str):
+                            sent_at = datetime.strptime(sent_at, '%Y-%m-%d %H:%M:%S')
+                        sent_at = moscow_tz.localize(sent_at) if sent_at.tzinfo is None else sent_at
+                        
+                        if sent_at.date() == now.date():
+                            today_pending.append(notif)
+                
+                # Если нет активных уведомлений за сегодня - создаем новое
+                if not today_pending:
                     # Создаем новое уведомление
                     log_id = NotificationLog.create(plant['id'], 'watering')
                     # Отправляем уведомление
                     asyncio.run(telegram_notifier.send_watering_notification(plant, log_id))
                     logger.info(f"Отправлено уведомление о поливе для растения {plant['name']}")
+                else:
+                    logger.info(f"Уведомление для растения {plant['name']} уже было отправлено сегодня")
             
             # Проверяем растения, требующие прикормки
             plants_to_fertilize = Plant.get_plants_needing_fertilizer()
             for plant in plants_to_fertilize:
-                # Проверяем, есть ли уже активные уведомления
+                # Проверяем, есть ли уже активные уведомления ЗА СЕГОДНЯ
                 pending = NotificationLog.get_pending_for_plant(plant['id'], 'fertilizer')
-                if not pending:
+                
+                # Фильтруем уведомления - только сегодняшние
+                today_pending = []
+                if pending:
+                    for notif in pending:
+                        sent_at = notif['sent_at']
+                        if isinstance(sent_at, str):
+                            sent_at = datetime.strptime(sent_at, '%Y-%m-%d %H:%M:%S')
+                        sent_at = moscow_tz.localize(sent_at) if sent_at.tzinfo is None else sent_at
+                        
+                        if sent_at.date() == now.date():
+                            today_pending.append(notif)
+                
+                # Если нет активных уведомлений за сегодня - создаем новое
+                if not today_pending:
                     # Создаем новое уведомление
                     log_id = NotificationLog.create(plant['id'], 'fertilizer')
                     # Отправляем уведомление
                     asyncio.run(telegram_notifier.send_fertilizer_notification(plant, log_id))
                     logger.info(f"Отправлено уведомление о прикормке для растения {plant['name']}")
+                else:
+                    logger.info(f"Уведомление о прикормке для растения {plant['name']} уже было отправлено сегодня")
             
             logger.info("Проверка уведомлений завершена")
             

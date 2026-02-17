@@ -15,7 +15,7 @@ import threading
 
 # Настройка логирования
 logging.basicConfig(
-    level=logging.INFO,
+    level=logging.ERROR,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
@@ -343,6 +343,221 @@ def plant_history(plant_id):
     return render_template('plant_history.html', plant=plant, history=history)
 
 
+@app.route('/calendar')
+@login_required
+def calendar_view():
+    """Календарь ухода за растениями"""
+    from datetime import datetime, timedelta, date
+    import calendar as cal
+    
+    # Получаем параметры из query string
+    year = request.args.get('year', type=int)
+    month = request.args.get('month', type=int)
+    
+    # Если не указаны - берем текущий месяц
+    now = datetime.now()
+    if not year or not month:
+        year = now.year
+        month = now.month
+    
+    # Получаем все растения
+    plants = Plant.get_all()
+    
+    # Получаем историю за выбранный месяц
+    month_start = date(year, month, 1)
+    if month == 12:
+        month_end = date(year + 1, 1, 1)
+    else:
+        month_end = date(year, month + 1, 1)
+    
+    # Собираем все события за месяц
+    events = {}  # {date: [events]}
+    
+    for plant in plants:
+        # Получаем историю полива за месяц
+        history = WateringHistory.get_by_plant(plant['id'], limit=100)
+        for entry in history:
+            event_date = entry['watered_at'].date()
+            if month_start <= event_date < month_end:
+                if event_date not in events:
+                    events[event_date] = []
+                
+                events[event_date].append({
+                    'type': entry['action_type'],
+                    'plant_name': plant['name'],
+                    'plant_id': plant['id'],
+                    'user_name': entry['user_name'],
+                    'time': entry['watered_at'].strftime('%H:%M')
+                })
+        
+        # Добавляем запланированные поливы
+        if plant['next_watering_date'] and month_start <= plant['next_watering_date'] < month_end:
+            event_date = plant['next_watering_date']
+            if event_date not in events:
+                events[event_date] = []
+            
+            events[event_date].append({
+                'type': 'planned_watering',
+                'plant_name': plant['name'],
+                'plant_id': plant['id'],
+                'user_name': None,
+                'time': None
+            })
+        
+        # Добавляем запланированные прикормки
+        if plant['next_fertilizer_date'] and month_start <= plant['next_fertilizer_date'] < month_end:
+            event_date = plant['next_fertilizer_date']
+            if event_date not in events:
+                events[event_date] = []
+            
+            events[event_date].append({
+                'type': 'planned_fertilizer',
+                'plant_name': plant['name'],
+                'plant_id': plant['id'],
+                'user_name': None,
+                'time': None
+            })
+    
+    # Генерируем календарную сетку
+    cal.setfirstweekday(0)  # Понедельник первый день недели
+    month_calendar = cal.monthcalendar(year, month)
+    
+    # Названия месяцев
+    month_names = {
+        1: 'Январь', 2: 'Февраль', 3: 'Март', 4: 'Апрель',
+        5: 'Май', 6: 'Июнь', 7: 'Июль', 8: 'Август',
+        9: 'Сентябрь', 10: 'Октябрь', 11: 'Ноябрь', 12: 'Декабрь'
+    }
+    
+    # Предыдущий и следующий месяцы
+    prev_month = month - 1 if month > 1 else 12
+    prev_year = year if month > 1 else year - 1
+    next_month = month + 1 if month < 12 else 1
+    next_year = year if month < 12 else year + 1
+    
+    # Создаем словарь дат для шаблона
+    calendar_dates = {}
+    for week in month_calendar:
+        for day in week:
+            if day != 0:
+                calendar_dates[day] = date(year, month, day)
+    
+    return render_template('calendar.html',
+                         year=year,
+                         month=month,
+                         month_name=month_names[month],
+                         month_calendar=month_calendar,
+                         calendar_dates=calendar_dates,
+                         events=events,
+                         today=now.date(),
+                         prev_year=prev_year,
+                         prev_month=prev_month,
+                         next_year=next_year,
+                         next_month=next_month)
+
+
+@app.route('/statistics')
+@login_required
+def statistics():
+    """Статистика системы"""
+    from datetime import datetime, timedelta
+    from collections import defaultdict
+    
+    plants = Plant.get_all()
+    users = User.get_all()
+    today = datetime.now().date()
+    
+    # Статистика за последние 30 дней
+    thirty_days_ago = today - timedelta(days=30)
+    
+    # Собираем статистику по пользователям
+    user_stats = defaultdict(lambda: {'waterings': 0, 'fertilizers': 0, 'total': 0})
+    
+    # Статистика по дням
+    daily_stats = defaultdict(lambda: {'waterings': 0, 'fertilizers': 0})
+    
+    # Статистика по растениям
+    plant_stats = []
+    
+    for plant in plants:
+        history = WateringHistory.get_by_plant(plant['id'], limit=1000)
+        
+        watering_count = 0
+        fertilizer_count = 0
+        last_watered = None
+        last_fertilized = None
+        
+        for entry in history:
+            event_date = entry['watered_at'].date()
+            
+            # Статистика по пользователям
+            user_name = entry['user_name']
+            if entry['action_type'] == 'watering':
+                user_stats[user_name]['waterings'] += 1
+                user_stats[user_name]['total'] += 1
+            else:
+                user_stats[user_name]['fertilizers'] += 1
+                user_stats[user_name]['total'] += 1
+            
+            # Статистика за последние 30 дней
+            if event_date >= thirty_days_ago:
+                if entry['action_type'] == 'watering':
+                    daily_stats[event_date]['waterings'] += 1
+                    watering_count += 1
+                else:
+                    daily_stats[event_date]['fertilizers'] += 1
+                    fertilizer_count += 1
+            
+            # Последние действия
+            if entry['action_type'] == 'watering' and not last_watered:
+                last_watered = entry['watered_at']
+            elif entry['action_type'] == 'fertilizer' and not last_fertilized:
+                last_fertilized = entry['watered_at']
+        
+        plant_stats.append({
+            'name': plant['name'],
+            'id': plant['id'],
+            'watering_count': watering_count,
+            'fertilizer_count': fertilizer_count,
+            'last_watered': last_watered,
+            'last_fertilized': last_fertilized,
+            'next_watering': plant['next_watering_date'],
+            'next_fertilizer': plant['next_fertilizer_date']
+        })
+    
+    # Сортируем пользователей по активности
+    top_users = sorted(user_stats.items(), key=lambda x: x[1]['total'], reverse=True)[:5]
+    
+    # Подготовка данных для графика (последние 30 дней)
+    chart_labels = []
+    chart_waterings = []
+    chart_fertilizers = []
+    
+    for i in range(29, -1, -1):
+        date = today - timedelta(days=i)
+        chart_labels.append(date.strftime('%d.%m'))
+        chart_waterings.append(daily_stats[date]['waterings'])
+        chart_fertilizers.append(daily_stats[date]['fertilizers'])
+    
+    # Общая статистика
+    total_waterings = sum(user_stats[u]['waterings'] for u in user_stats)
+    total_fertilizers = sum(user_stats[u]['fertilizers'] for u in user_stats)
+    
+    # Сортируем растения по количеству поливов
+    plant_stats.sort(key=lambda x: x['watering_count'], reverse=True)
+    
+    return render_template('statistics.html',
+                         plants=plants,
+                         plant_stats=plant_stats,
+                         top_users=top_users,
+                         total_waterings=total_waterings,
+                         total_fertilizers=total_fertilizers,
+                         chart_labels=chart_labels,
+                         chart_waterings=chart_waterings,
+                         chart_fertilizers=chart_fertilizers,
+                         today=today)
+
+
 @app.route('/settings', methods=['GET', 'POST'])
 @login_required
 def settings():
@@ -353,6 +568,13 @@ def settings():
         SystemSettings.set('notification_retry_interval_minutes', request.form.get('retry_interval'))
         SystemSettings.set('notification_max_retries', request.form.get('max_retries'))
         SystemSettings.set('telegram_bot_token', request.form.get('bot_token'))
+        
+        # Сохранение шаблонов повторных сообщений
+        for i in range(1, 6):
+            message_key = f'retry_message_{i}'
+            message_value = request.form.get(message_key)
+            if message_value:  # Сохраняем только непустые значения
+                SystemSettings.set(message_key, message_value)
         
         flash('Настройки успешно сохранены', 'success')
         return redirect(url_for('settings'))
@@ -384,21 +606,37 @@ def dashboard_stats():
 
 def start_telegram_bot():
     """Запуск Telegram бота в отдельном потоке"""
+    import asyncio
     from telegram_bot import telegram_notifier
+    
     if telegram_notifier.application:
-        telegram_notifier.run_bot()
+        # Создаем новый event loop для этого потока
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        
+        try:
+            telegram_notifier.run_bot()
+        except Exception as e:
+            logger.error(f"Ошибка при запуске Telegram бота: {e}", exc_info=True)
+        finally:
+            loop.close()
 
 
 if __name__ == '__main__':
     # Создание необходимых директорий
     Config.init_app(app)
     
-    # Запуск планировщика
-    notification_scheduler.start()
+    # Запуск планировщика только в главном процессе (не в reloader процессе)
+    # В debug режиме Flask запускает приложение дважды из-за reloader
+    import os
+    if os.environ.get('WERKZEUG_RUN_MAIN') == 'true' or not Config.DEBUG:
+        notification_scheduler.start()
+        logger.info("Планировщик уведомлений запущен")
+    else:
+        logger.info("Пропуск запуска планировщика (reloader процесс)")
     
-    # Запуск Telegram бота в отдельном потоке
-    # bot_thread = threading.Thread(target=start_telegram_bot, daemon=True)
-    # bot_thread.start()
+    # ВАЖНО: Telegram бот теперь запускается отдельно через run_bot.py
+    # Не запускаем его здесь, чтобы избежать конфликтов с event loop
     
     # Запуск Flask приложения
     logger.info(f"Запуск приложения на {Config.HOST}:{Config.PORT}")

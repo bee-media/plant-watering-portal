@@ -409,16 +409,16 @@ class SystemSettings:
 
 class NotificationLog:
     """Модель журнала уведомлений"""
-    
+
     @staticmethod
     def create(plant_id, notification_type):
         """Создать запись об уведомлении"""
         query = """
-            INSERT INTO notification_log (plant_id, notification_type)
-            VALUES (%s, %s)
+            INSERT INTO notification_log (plant_id, notification_type, last_attempt_at)
+            VALUES (%s, %s, NOW())
         """
         return Database.execute_query(query, (plant_id, notification_type), commit=True)
-    
+
     @staticmethod
     def mark_completed(log_id, user_id):
         """Отметить уведомление как выполненное"""
@@ -429,7 +429,7 @@ class NotificationLog:
             WHERE id = %s
         """
         Database.execute_query(query, (user_id, datetime.now(), log_id), commit=True)
-    
+
     @staticmethod
     def get_pending_for_plant(plant_id, notification_type):
         """Получить незавершенные уведомления для растения"""
@@ -441,9 +441,24 @@ class NotificationLog:
             ORDER BY sent_at DESC
         """
         return Database.execute_query(query, (plant_id, notification_type), fetch_all=True)
-    
+
+    @staticmethod
+    def get_all_pending():
+        """Получить ВСЕ незавершённые уведомления"""
+        query = """
+            SELECT * FROM notification_log 
+            WHERE is_completed = FALSE
+            ORDER BY sent_at ASC
+        """
+        return Database.execute_query(query, fetch_all=True)
+
     @staticmethod
     def increment_attempt(log_id):
-        """Увеличить счетчик попыток"""
-        query = "UPDATE notification_log SET attempt_number = attempt_number + 1 WHERE id = %s"
+        """Увеличить счётчик попыток и обновить время последней попытки"""
+        query = """
+            UPDATE notification_log 
+            SET attempt_number = attempt_number + 1, 
+                last_attempt_at = NOW()
+            WHERE id = %s
+        """
         Database.execute_query(query, (log_id,), commit=True)

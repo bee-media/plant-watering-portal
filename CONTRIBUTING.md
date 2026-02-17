@@ -13,7 +13,7 @@
 
 ## 🐛 Сообщить об ошибке
 
-Нашли баг? Создайте [Issue](https://github.com/bee-media/plant-watering-portal/issues) с:
+Нашли баг? Создайте [Issue](https://github.com/yourusername/plant-watering-portal/issues) с:
 
 - Описанием проблемы
 - Шагами для воспроизведения
@@ -45,7 +45,7 @@
 
 ## 💡 Предложить улучшение
 
-Есть идея? Создайте [Discussion](https://github.com/bee-media/plant-watering-portal/discussions) с:
+Есть идея? Создайте [Discussion](https://github.com/yourusername/plant-watering-portal/discussions) с:
 
 - Описанием функционала
 - Почему это полезно
@@ -229,7 +229,7 @@ static/
 
 - Создайте [Discussion](https://github.com/bee-media/plant-watering-portal/discussions)
 - Напишите в [Issues](https://github.com/bee-media/plant-watering-portal/issues)
-- Telegram: [@rostcorbina](https://t.me/rostcorbina)
+- Telegram: [@yourusername](https://t.me/rostcorbina)
 
 ## 🙏 Спасибо!
 
